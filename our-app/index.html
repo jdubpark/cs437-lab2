@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      .container {
+        display: flex;
+      }
+
+      .control-button {
+        font-size: 45px;
+        color: grey;
+        cursor: pointer;
+      }
+
+      .control-button:hover {
+        color: green;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    />
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="jumbotron">
+        <h2>CS498: IoT -- Lab 2</h2>
+        <img src="./media/default_background.png" id="pics" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="container">
+        <div class="jumbotron text-center col-md-6">
+          <span id="upArrow" class="control-button">&#8679;</span><br />
+          <span id="leftArrow" class="control-button">&#8678;</span>
+          <span style="font-size: 45px">&nbsp;&nbsp;</span>
+          <span id="stopArrow" class="control-button">X</span>
+          <span style="font-size: 45px">&nbsp;&nbsp;</span>
+          <span id="rightArrow" class="control-button">&#8680;</span><br />
+          <span id="downArrow" class="control-button">&#8681;</span>
+        </div>
+
+        <div class="jumbotron text-left col-md-6">
+          <p>
+            Last Update: <span id="last_update">0.0</span><br />
+            <span id="speed_dot" style="color: green">&bull;</span> Speed:
+            <span id="speed">0.0</span><br />
+            <span id="servo_dot" style="color: green">&bull;</span> Servo:
+            <span id="servo">0.0</span><br />
+            <span id="power_dot" style="color: green">&bull;</span> Power:
+            <span id="power">0.0</span><br />
+            <span id="grayscale_dot" style="color: green">&bull;</span>
+            Grayscale: <span id="grayscale">0.0</span><br />
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const URL = "http://127.0.0.1:3000";
+      // Send movement commands to the server
+      const sendMovementCommand = (direction) => {
+        fetch(`${URL}/request`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ request: "move", type: direction }),
+        })
+          .then((response) => response.json())
+          .then((data) => console.log("Movement sent:", data))
+          .catch((error) => console.error("Error:", error));
+      };
+
+      // Event listeners for arrow buttons
+      document
+        .getElementById("upArrow")
+        .addEventListener("click", () => sendMovementCommand("forward"));
+      document
+        .getElementById("downArrow")
+        .addEventListener("click", () => sendMovementCommand("backward"));
+      document
+        .getElementById("leftArrow")
+        .addEventListener("click", () => sendMovementCommand("left"));
+      document
+        .getElementById("rightArrow")
+        .addEventListener("click", () => sendMovementCommand("right"));
+      document
+        .getElementById("stopArrow")
+        .addEventListener("click", () => sendMovementCommand("stop"));
+
+      // Function to fetch and update sensor data
+      const updateSensorData = () => {
+        fetch(`${URL}/request`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ request: "sensor_data" }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const parsedData = JSON.parse(data.data).data;
+            document.getElementById("last_update").textContent =
+              new Date().toLocaleString();
+            document.getElementById("speed").textContent =
+              parsedData.speed || "0.0";
+            document.getElementById("servo").textContent =
+              parsedData.servo || "0.0";
+            document.getElementById("power").textContent = parsedData.power
+              ? `${parsedData.power}V`
+              : "0.0V";
+            document.getElementById("grayscale").textContent =
+              parsedData.grayscale || "N/A";
+          })
+          .catch((error) =>
+            console.error("Error fetching sensor data:", error)
+          );
+      };
+
+      setInterval(updateSensorData, 1000);
+    </script>
+  </body>
+</html>
